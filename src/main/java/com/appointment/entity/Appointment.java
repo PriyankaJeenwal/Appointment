@@ -1,6 +1,7 @@
 package com.appointment.entity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -29,21 +30,19 @@ public class Appointment {
 
 	@Column(name = "disease")
 	private String disease;
-	
-	
 
 	@Column(name = "doctorName")
 	private String doctorName;
 
-	@Column(name = "appintmentDate")
-	private LocalDate appintmentDate;
+	@Column(name = "appointmentDate")
+	private LocalDateTime appointmentDate;
 
 	@Column(name = "userId")
 	private Long userId;
 
 	@Column(name = "doctorId")
 	private Long doctorId;
-	
+
 	@Column(name = "description")
 	private String description;
 

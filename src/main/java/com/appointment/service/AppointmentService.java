@@ -3,17 +3,19 @@ package com.appointment.service;
 import java.awt.print.Pageable;
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.appointment.entity.Appointment;
 import com.appointment.response.AppointmentResponse;
 
 public interface AppointmentService {
 
 
-//	public AppointmentResponse<List<Appointment>> getByUserId(Long userId);
 
 	public AppointmentResponse<Appointment> addAppointment(Appointment appointment);
 
 	public AppointmentResponse<Appointment> getAppointmentById(Long id);
+
 
 	public AppointmentResponse<List<Appointment>> getAllAppointment(org.springframework.data.domain.Pageable paging);
 
@@ -22,7 +24,9 @@ public interface AppointmentService {
 	public AppointmentResponse<List<Appointment>> getAppointmentByDisease(String disease);
 
 
-
+	public AppointmentResponse<List<Appointment>> getByUserId(Long userId);
+	
+	public String uploadDocument(String path, MultipartFile file) ;
 
 	public AppointmentResponse<Appointment> updateAppointment(Appointment appointment, Long id);
 

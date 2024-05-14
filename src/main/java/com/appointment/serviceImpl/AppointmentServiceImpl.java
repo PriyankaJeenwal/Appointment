@@ -1,8 +1,12 @@
 package com.appointment.serviceImpl;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.appointment.entity.Appointment;
 import com.appointment.repository.AppointmentDao;
@@ -29,10 +34,26 @@ public class AppointmentServiceImpl implements AppointmentService {
 	private static final String ERROR_MESSAGE = "Something went wrong";
 	private static final Logger log = LoggerFactory.getLogger(AppointmentServiceImpl.class);
 
-	/*
-	 * @Override public AppointmentResponse<List<Appointment>> getByUserId(Long
-	 * userId) { // TODO Auto-generated method stub return null; }
-	 */
+	@Override
+	public AppointmentResponse<List<Appointment>> getByUserId(Long userId) {
+		AppointmentResponse<List<Appointment>> appointmentResponse = new AppointmentResponse<List<Appointment>>();
+		try {
+			List<Appointment> taskList = appointmentRepository.findByuserId(userId);
+			if (!taskList.isEmpty()) {
+
+				appointmentResponse.setData(taskList);
+				appointmentResponse.setMessage("success");
+				appointmentResponse.setStatus(true);
+				return appointmentResponse;
+			}
+		} catch (Exception e) {
+			log.error("exception " + e.toString());
+		}
+		appointmentResponse.setMessage("no data found");
+		appointmentResponse.setStatus(false);
+		return appointmentResponse;
+
+	}
 
 	@Override
 	public AppointmentResponse<Appointment> addAppointment(Appointment appointment) {
@@ -40,7 +61,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 		log.info("appointment :{}", appointment);
 		try {
 			if (appointment.getDisease() != null && appointment.getUserId() != null
-					&& appointment.getAppintmentDate() != null && appointment.getDoctorId() != null) {
+					&& appointment.getAppointmentDate() != null && appointment.getDoctorId() != null) {
 				Optional<Appointment> existingAppointment = appointmentRepository.findAppointmentByDiseaseAndUserId(
 						appointment.getDisease().toLowerCase(), appointment.getUserId());
 
@@ -53,7 +74,7 @@ public class AppointmentServiceImpl implements AppointmentService {
 					newAppointment.setUserId(appointment.getUserId());
 					newAppointment.setDoctorId(appointment.getDoctorId());
 					newAppointment.setDescription(appointment.getDescription());
-					newAppointment.setAppintmentDate(appointment.getAppintmentDate());
+					newAppointment.setAppointmentDate(appointment.getAppointmentDate());
 					newAppointment.setPreviousMedicalDocument(appointment.getPreviousMedicalDocument());
 
 					appointmentRepository.save(newAppointment);
@@ -101,31 +122,31 @@ public class AppointmentServiceImpl implements AppointmentService {
 
 	}
 
-	@Override
-	public AppointmentResponse<Appointment> getAppointmentById(Long id) {
-		log.info("Id : {}", id);
-		AppointmentResponse<Appointment> appointmentResponse = new AppointmentResponse<Appointment>();
-		try {
-			Optional<Appointment> appointment = appointmentRepository.findById(id);
-			if (!appointment.isEmpty()) {
-				Appointment appointmentObj = appointment.get();
-				log.info("appointment is not empty");
-				List<Appointment> appointmentList = new ArrayList<Appointment>();
-				appointmentList.add(appointmentObj);
-				appointmentResponse.setData(appointmentList);
-				appointmentResponse.setMessage("appointment found");
-				appointmentResponse.setStatus(true);
-				return appointmentResponse;
-			}
-		} catch (Exception e) {
-			log.error("exception in getAppointmentById : {}", e);
-		}
-
-		appointmentResponse.setMessage("appointment not found");
-		appointmentResponse.setStatus(false);
-		return appointmentResponse;
-
-	}
+//	@Override
+//	public AppointmentResponse<Appointment> getAppointmentById(Long id){
+//		log.info("Id : {}", id);
+//		AppointmentResponse<Appointment> appointmentResponse = new AppointmentResponse<Appointment>();
+//		try {
+//			Optional<Appointment> appointment = appointmentRepository.findById(id);
+//			if (!appointment.isEmpty()) {
+//				Appointment appointmentObj = appointment.get();
+//				log.info("appointment is not empty");
+//				List<Appointment> appointmentList = new ArrayList<Appointment>();
+//				appointmentList.add(appointmentObj);
+//				appointmentResponse.setData(appointmentList);
+//				appointmentResponse.setMessage("appointment found");
+//				appointmentResponse.setStatus(true);
+//				return appointmentResponse;
+//			}
+//		} catch (Exception e) {
+//			log.error("exception in getAppointmentById : {}", e);
+//		}
+//
+//		appointmentResponse.setMessage("appointment not found");
+//		appointmentResponse.setStatus(false);
+//		return appointmentResponse;
+//
+//	}
 
 	@Override
 	public AppointmentResponse<List<Appointment>> getAppointmentByDisease(String disease) {
@@ -179,19 +200,17 @@ public class AppointmentServiceImpl implements AppointmentService {
 
 				if (appointment.isPresent()) {
 					log.info(" appointment is not null :{}", appointment);
-					
+
 					appointment.get().setDisease(newAppointment.getDisease());
 					appointment.get().setDescription(newAppointment.getDescription());
 					appointment.get().setDoctorId(newAppointment.getDoctorId());
-					appointment.get().setAppintmentDate(newAppointment.getAppintmentDate());
-	
-					
+					appointment.get().setAppointmentDate(newAppointment.getAppointmentDate());
+
 					List<Appointment> appointmentList = new ArrayList<Appointment>();
-					
-						
+
 					appointmentList.add(newAppointment);
-					
-appointmentRepository.saveAll(appointmentList);
+
+					appointmentRepository.saveAll(appointmentList);
 					appointmentResponse.setData(appointmentList);
 					appointmentResponse.setMessage("appointment updated");
 					appointmentResponse.setStatus(true);
@@ -208,6 +227,63 @@ appointmentRepository.saveAll(appointmentList);
 		appointmentResponse.setStatus(false);
 		return appointmentResponse;
 
+	}
+
+	@Override
+	public AppointmentResponse<Appointment> getAppointmentById(Long id) {
+		log.info("Id : {}", id);
+		AppointmentResponse<Appointment> appointmentResponse = new AppointmentResponse<Appointment>();
+		try {
+			Optional<Appointment> appointment = appointmentRepository.findById(id);
+			if (!appointment.isEmpty()) {
+				Appointment appointmentObj = appointment.get();
+				log.info("appointment is not empty");
+				List<Appointment> appointmentList = new ArrayList<Appointment>();
+				appointmentList.add(appointmentObj);
+				appointmentResponse.setData(appointmentList);
+				appointmentResponse.setMessage("appointment found");
+				appointmentResponse.setStatus(true);
+				return appointmentResponse;
+			}
+		} catch (Exception e) {
+			log.error("exception in getAppointmentById : {}", e);
+		}
+
+		appointmentResponse.setMessage("appointment not found");
+		appointmentResponse.setStatus(false);
+		return appointmentResponse;
+
+	}
+
+	@Override
+	public String uploadDocument(String path, MultipartFile file) {
+
+		// File name
+		String name = file.getOriginalFilename();
+
+		// File Path
+		String filePath = path + File.separator + name;
+
+		// create folder if not created
+		File f = new File(path);
+		if (!f.exists()) {
+			f.mkdir();
+		}
+
+		// file copy
+		try {
+
+			File files = new File("documents/" + file.getOriginalFilename());
+			if (files.exists()) {
+				System.out.println("file already exist");
+			} else {
+				Files.copy(file.getInputStream(), Paths.get(filePath));
+			}
+		} catch (Exception e) {
+
+			e.printStackTrace();
+		}
+		return name;
 	}
 
 }

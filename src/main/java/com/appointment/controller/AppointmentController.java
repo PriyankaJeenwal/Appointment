@@ -14,11 +14,8 @@ import com.appointment.response.AppointmentResponse;
 
 public interface AppointmentController {
 
-	/*
-	 * @GetMapping("/user/{userId}") public
-	 * ResponseEntity<AppointmentResponse<List<Appointment>>>
-	 * getAppointmentByUserId(@PathVariable Long userId);
-	 */
+	@GetMapping("/user/{userId}")
+	public ResponseEntity<AppointmentResponse<List<Appointment>>>getByUserId( Long userId);
 	@PostMapping("/addAppointment")
 	public ResponseEntity<AppointmentResponse<Appointment>> addAppointment(@RequestBody Appointment appointment);
 
@@ -37,7 +34,7 @@ public interface AppointmentController {
 	@PostMapping("/delete/{id}")
 	public ResponseEntity<String> deleteAppointmentById(@PathVariable Long id);
 
-	@PostMapping("/update/{id}")
-	public ResponseEntity<AppointmentResponse<Appointment>> updateAppointment(@RequestBody Appointment appointment,@PathVariable Long id);
+//	@PostMapping("/update/{id}")
+//	public ResponseEntity<AppointmentResponse<Appointment>> updateAppointment(@RequestBody Appointment appointment,@PathVariable Long id);
 
 }
