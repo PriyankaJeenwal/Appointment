@@ -1,5 +1,6 @@
 package com.appointment.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,9 +10,10 @@ import com.appointment.entity.Appointment;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
 
-	Optional<Appointment> findAppointmentByDiseaseAndUserId(String lowerCase, Long userId); 
+	Optional<Appointment> findAppointmentByTitleAndUserId(String lowerCase, Long userId);
 
 	public List<Appointment> findByuserId(Long userId);
 
+	public List<Appointment> findAppointmentByAppointmentDate(LocalDate appointmentDate);
 
 }

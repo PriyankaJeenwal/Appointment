@@ -1,6 +1,5 @@
 package com.appointment.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -16,12 +15,9 @@ public class AppointmentResponse<T> {
 
 	public AppointmentResponse(String message, boolean status) {
 		super();
-		
+
 		this.message = message;
 		this.status = status;
 	}
 
-	
 }
-
-

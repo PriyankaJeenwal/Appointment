@@ -1,7 +1,6 @@
 package com.appointment.controller;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,11 +12,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.beans.factory.annotation.Value;
 import com.appointment.entity.Appointment;
 import com.appointment.repository.AppointmentRepository;
 import com.appointment.response.AppointmentResponse;
 import com.appointment.service.AppointmentService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
 @RequestMapping("/appointment")
@@ -29,28 +32,29 @@ public class AppointmentControllerImpl implements AppointmentController {
 	@Autowired
 	AppointmentRepository appointmentRepository;
 
+	@Value("${project.image}")
+	private String path;
+
 	static final Logger log = LogManager.getLogger(AppointmentControllerImpl.class.getName());
 
 	@Override
 	public ResponseEntity<AppointmentResponse<Appointment>> addAppointment(Appointment appointment) {
 		try {
-			if (appointment.getAppointmentDate() == null || appointment.getDisease() == null
-					|| appointment.getDoctorId() == null || appointment.getUserId() == null) {
-				return new ResponseEntity<>(new AppointmentResponse<Appointment>(
-						"Appointment not added. Required fields are missing.", false), HttpStatus.BAD_REQUEST);
-			}
-			log.info("adding new task : {}", appointment);
+			if (!(appointment.getAppointmentDate() == null && appointment.getTitle() == null
+					&& appointment.getAgentId() == null && appointment.getUserId() == null
+					&& appointment.getTitle() == " ")) {
 
-			AppointmentResponse<Appointment> appointmentResponse = appointmentService.addAppointment(appointment);
+				log.info("adding new appointment : {}", appointment);
 
-			if (appointmentResponse.isStatus()) {
+				AppointmentResponse<Appointment> appointmentResponse = appointmentService.addAppointment(appointment);
 				return new ResponseEntity<>(appointmentResponse, HttpStatus.CREATED);
 			} else {
-				return new ResponseEntity<>(appointmentResponse, HttpStatus.BAD_REQUEST);
-			}
+				return new ResponseEntity<>(new AppointmentResponse<Appointment>(
+						"Appointment not added. Required fields are missing.", false), HttpStatus.BAD_REQUEST);
 
+			}
 		} catch (Exception e) {
-			log.error("Exception while adding task: {}", e.getMessage());
+			log.error("Exception while adding appointment: {}", e.getMessage());
 			return new ResponseEntity<>(
 					new AppointmentResponse<>("Appointment not added. Internal Server Error", false),
 					HttpStatus.INTERNAL_SERVER_ERROR);
@@ -66,11 +70,9 @@ public class AppointmentControllerImpl implements AppointmentController {
 			Pageable paging = PageRequest.of(page, pageSize);
 			AppointmentResponse<List<Appointment>> appointmentResponse = appointmentService.getAllAppointment(paging);
 			log.info("appointmentList :{} ", appointmentResponse.getData());
-			if (appointmentResponse.isStatus()) {
-				return new ResponseEntity<>(appointmentResponse, HttpStatus.FOUND);
-			} else {
-				return new ResponseEntity<>(appointmentResponse, HttpStatus.BAD_REQUEST);
-			}
+
+			return new ResponseEntity<>(appointmentResponse, HttpStatus.FOUND);
+
 		} catch (Exception e) {
 			log.info("exception : {}", e);
 			return new ResponseEntity<>(
@@ -79,31 +81,13 @@ public class AppointmentControllerImpl implements AppointmentController {
 		}
 
 	}
-//	@Override
-//	public ResponseEntity<AppointmentResponse<Appointment>>getAppointmentById(@PathVariable Long id) {
-//		try {
-//			if (id != 0 && id != null) {
-//				log.info("get Appointment By Id : {}", id);
-//				AppointmentResponse<Appointment> appointmentResponse =appointmentService.getAppointmentById(id);
-//				log.info("appointment :{}", appointmentResponse.getData());
-//				return new ResponseEntity<>(appointmentResponse, HttpStatus.FOUND);
-//			}
-//		} catch (Exception e) {
-//			log.info("exception : {}", e);
-//			return new ResponseEntity<>(
-//					new AppointmentResponse<>("Appointment not added. Internal Server Error", false),
-//					HttpStatus.INTERNAL_SERVER_ERROR);
-//		}
-//		return new ResponseEntity<AppointmentResponse<Appointment>>(HttpStatus.NOT_FOUND);
-//	}
 
 	@Override
-	public ResponseEntity<AppointmentResponse<List<Appointment>>> getAppointmentByDisease(
-			@PathVariable String disease) {
+	public ResponseEntity<AppointmentResponse<List<Appointment>>> getAppointmentByTitle(@PathVariable String title) {
 
 		try {
 			AppointmentResponse<List<Appointment>> appointmentResponse = appointmentService
-					.getAppointmentByDisease(disease);
+					.getAppointmentByTitle(title);
 			if (appointmentResponse.isStatus()) {
 				return new ResponseEntity<>(appointmentResponse, HttpStatus.FOUND);
 			} else {
@@ -133,22 +117,6 @@ public class AppointmentControllerImpl implements AppointmentController {
 		return new ResponseEntity<String>("Appointment  not exist  with given id", HttpStatus.NOT_FOUND);
 
 	}
-
-//	  @Override
-//	  public ResponseEntity<AppointmentResponse<Appointment>>updateAppointment(Appointment appointment, Long id) { 
-//		  
-//		  try {
-//
-//				log.info("updating the appointment :{}", appointment);
-//				AppointmentResponse<Appointment> appointmentResponse = appointmentService.getAppointmentById(id);
-//					return new ResponseEntity<>(appointmentResponse, HttpStatus.OK);
-//			} catch (Exception e) {
-//				log.info("exception : {}", e);
-//				return new ResponseEntity<>(new AppointmentResponse<>("Appointment not added. Internal Server Error", false),
-//						HttpStatus.INTERNAL_SERVER_ERROR);
-//			}
-//	
-//	  }
 
 	@Override
 	public ResponseEntity<AppointmentResponse<List<Appointment>>> getByUserId(Long userId) {
@@ -183,6 +151,57 @@ public class AppointmentControllerImpl implements AppointmentController {
 					HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return new ResponseEntity<AppointmentResponse<Appointment>>(HttpStatus.NOT_FOUND);
+	}
+
+	@Override
+	public ResponseEntity<AppointmentResponse<Appointment>> updateAppointment(Appointment appointment, Long id) {
+		try {
+			log.info("updating the appointment :{}", appointment);
+			if (id != null && appointment != null) {
+
+				AppointmentResponse<Appointment> appointmentResponse = appointmentService.updateAppointment(appointment,
+						id);
+
+				return new ResponseEntity<>(appointmentResponse, HttpStatus.OK);
+
+			} else {
+				return new ResponseEntity<>(new AppointmentResponse<>("Appointment id can not be null", false),
+						HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+
+		} catch (Exception e) {
+			log.info("exception : {}", e);
+			return new ResponseEntity<>(
+					new AppointmentResponse<>("Appointment not added. Internal Server Error", false),
+					HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+
+	}
+
+	@Override
+	public AppointmentResponse<Appointment> Upload(String appointment, List<MultipartFile> file) throws JsonMappingException, JsonProcessingException {
+		System.out.println(appointment);
+		
+		
+		Appointment appointmentResponse = new ObjectMapper().readValue(appointment, Appointment.class);  
+
+		System.out.println(appointmentResponse);
+
+		AppointmentResponse<Appointment> appointmentJson = appointmentService.getJson(appointment, path, file);
+		return appointmentJson;
+	}
+
+	@Override
+	public ResponseEntity<Appointment> fileUpload(MultipartFile image) {
+		try {
+			appointmentService.uploadImage(path, image);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+
+		}
+		return new ResponseEntity<>(HttpStatus.OK);
+
 	}
 
 }
